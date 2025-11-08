@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart402 - AI-Native Smart Contract Framework</title>
+    <link rel="stylesheet" href="static/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-cube"></i>
+                <span>Smart<strong>402</strong></span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#demo" class="nav-link">Demo</a></li>
+                <li><a href="#documentation" class="nav-link">Docs</a></li>
+                <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    The Future of <span class="gradient-text">AI-Native</span><br>
+                    Smart Contracts
+                </h1>
+                <p class="hero-subtitle">
+                    Complete algorithmic framework integrating AEO, LLMO, SCC, and X402 Protocol
+                    for maximum AI visibility, comprehension, and autonomous execution.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#demo" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i> Try Demo
+                    </a>
+                    <a href="#documentation" class="btn btn-secondary">
+                        <i class="fas fa-book"></i> Read Docs
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Core Technologies</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">99.99%</div>
+                        <div class="stat-label">Availability</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">O(log n)</div>
+                        <div class="stat-label">Search Complexity</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">O(1)</div>
+                        <div class="stat-label">Execution Time</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="algorithm-animation">
+                    <canvas id="heroCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Four Pillars of Innovation</h2>
+            <p class="section-subtitle">
+                Smart402 integrates four cutting-edge technologies into a unified framework
+            </p>
+
+            <div class="features-grid">
+                <!-- AEO -->
+                <div class="feature-card" data-aos="fade-up">
+                    <div class="feature-icon aeo">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                    <h3>AEO</h3>
+                    <h4>Answer Engine Optimization</h4>
+                    <p>Optimize contracts for maximum AI visibility across ChatGPT, Claude, Perplexity, and other AI platforms.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Semantic relevance scoring</li>
+                        <li><i class="fas fa-check"></i> Citation frequency analysis</li>
+                        <li><i class="fas fa-check"></i> Content freshness optimization</li>
+                        <li><i class="fas fa-check"></i> Cross-platform presence</li>
+                    </ul>
+                    <div class="feature-formula">
+                        <code>AEO Score = Σᵢ wᵢ * fᵢ(contract)</code>
+                    </div>
+                </div>
+
+                <!-- LLMO -->
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon llmo">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>LLMO</h3>
+                    <h4>Large Language Model Optimization</h4>
+                    <p>Ensure perfect AI comprehension through universal encoding and semantic parsing.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Understanding score calculation</li>
+                        <li><i class="fas fa-check"></i> Semantic dependency parsing</li>
+                        <li><i class="fas fa-check"></i> Transformer-based encoding</li>
+                        <li><i class="fas fa-check"></i> Multi-model ensemble</li>
+                    </ul>
+                    <div class="feature-formula">
+                        <code>U(C, M) = Σᵢ πᵢ * P(correct | clauseᵢ)</code>
+                    </div>
+                </div>
+
+                <!-- SCC -->
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-icon scc">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>SCC</h3>
+                    <h4>Smart Contract Compilation</h4>
+                    <p>Automatic smart contract generation from natural language with formal verification.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> NL → AST → IR → Bytecode</li>
+                        <li><i class="fas fa-check"></i> Formal verification (CTL)</li>
+                        <li><i class="fas fa-check"></i> Storage optimization</li>
+                        <li><i class="fas fa-check"></i> Security auditing</li>
+                    </ul>
+                    <div class="feature-formula">
+                        <code>Q(SC) = completeness + soundness - penalty</code>
+                    </div>
+                </div>
+
+                <!-- X402 -->
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-icon x402">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h3>X402</h3>
+                    <h4>Payment Protocol</h4>
+                    <p>Byzantine fault-tolerant payment execution with atomic swaps and optimal routing.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Byzantine consensus (PBFT)</li>
+                        <li><i class="fas fa-check"></i> Atomic swaps (HTLC)</li>
+                        <li><i class="fas fa-check"></i> Cross-chain routing</li>
+                        <li><i class="fas fa-check"></i> Payment optimization</li>
+                    </ul>
+                    <div class="feature-formula">
+                        <code>Valid(P) = votes(P) > 2n/3 ∧ verify(P)</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="demo">
+        <div class="container">
+            <h2 class="section-title">Interactive Demo</h2>
+            <p class="section-subtitle">
+                See Smart402 in action - process a contract through all four stages
+            </p>
+
+            <div class="demo-container">
+                <div class="demo-input">
+                    <h3>Contract Input</h3>
+                    <form id="contractForm">
+                        <div class="form-group">
+                            <label>Contract Type</label>
+                            <select id="contractType">
+                                <option value="payment">Payment Contract</option>
+                                <option value="service">Service Agreement</option>
+                                <option value="escrow">Escrow Contract</option>
+                                <option value="multi-party">Multi-Party Agreement</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount ($)</label>
+                            <input type="number" id="contractAmount" value="10000" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Parties (comma-separated)</label>
+                            <input type="text" id="contractParties" value="Alice, Bob">
+                        </div>
+                        <div class="form-group">
+                            <label>Terms & Conditions</label>
+                            <textarea id="contractTerms" rows="4">Payment for services rendered upon completion and verification of deliverables.</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-play"></i> Process Contract
+                        </button>
+                    </form>
+                </div>
+
+                <div class="demo-output">
+                    <h3>Processing Pipeline</h3>
+                    <div id="processingStages">
+                        <div class="stage" data-stage="aeo">
+                            <div class="stage-header">
+                                <i class="fas fa-search-plus"></i>
+                                <span>Stage 1: AEO</span>
+                                <div class="stage-status" id="status-aeo">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                            <div class="stage-content" id="content-aeo"></div>
+                        </div>
+
+                        <div class="stage" data-stage="llmo">
+                            <div class="stage-header">
+                                <i class="fas fa-brain"></i>
+                                <span>Stage 2: LLMO</span>
+                                <div class="stage-status" id="status-llmo">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                            <div class="stage-content" id="content-llmo"></div>
+                        </div>
+
+                        <div class="stage" data-stage="scc">
+                            <div class="stage-header">
+                                <i class="fas fa-code"></i>
+                                <span>Stage 3: SCC</span>
+                                <div class="stage-status" id="status-scc">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                            <div class="stage-content" id="content-scc"></div>
+                        </div>
+
+                        <div class="stage" data-stage="x402">
+                            <div class="stage-header">
+                                <i class="fas fa-exchange-alt"></i>
+                                <span>Stage 4: X402</span>
+                                <div class="stage-status" id="status-x402">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                            <div class="stage-content" id="content-x402"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="documentation" class="documentation">
+        <div class="container">
+            <h2 class="section-title">Documentation</h2>
+            <div class="docs-grid">
+                <a href="docs/getting-started.html" class="doc-card">
+                    <i class="fas fa-rocket"></i>
+                    <h3>Getting Started</h3>
+                    <p>Quick start guide and installation instructions</p>
+                </a>
+                <a href="docs/api-reference.html" class="doc-card">
+                    <i class="fas fa-book"></i>
+                    <h3>API Reference</h3>
+                    <p>Complete API documentation and examples</p>
+                </a>
+                <a href="docs/algorithms.html" class="doc-card">
+                    <i class="fas fa-calculator"></i>
+                    <h3>Algorithms</h3>
+                    <p>Mathematical formulations and specifications</p>
+                </a>
+                <a href="docs/architecture.html" class="doc-card">
+                    <i class="fas fa-sitemap"></i>
+                    <h3>Architecture</h3>
+                    <p>System design and component overview</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Smart402</h4>
+                    <p>AI-Native Smart Contract Framework</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#documentation">Documentation</a></li>
+                        <li><a href="#demo">Demo</a></li>
+                        <li><a href="dashboard.html">Dashboard</a></li>
+                        <li><a href="https://github.com">GitHub</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Technologies</h4>
+                    <ul>
+                        <li><a href="#features">AEO</a></li>
+                        <li><a href="#features">LLMO</a></li>
+                        <li><a href="#features">SCC</a></li>
+                        <li><a href="#features">X402</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li><a href="mailto:team@smart402.io">team@smart402.io</a></li>
+                        <li><a href="#">Support</a></li>
+                        <li><a href="#">Community</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Smart402. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="static/js/main.js"></script>
+    <script src="static/js/demo.js"></script>
+</body>
+</html>
