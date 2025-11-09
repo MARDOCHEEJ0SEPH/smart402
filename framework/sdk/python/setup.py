@@ -16,7 +16,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="smart402",
     version="1.0.0",
-    author="Smart402 Contributors",
+    author="Mardochée JOSEPH",
     author_email="developers@smart402.io",
     description="Python SDK for Smart402 - Universal Protocol for AI-Native Smart Contracts",
     long_description=long_description,
