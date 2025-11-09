@@ -1,0 +1,19 @@
+# Smart402 Python SDK Requirements
+
+# Blockchain
+web3>=6.0.0
+eth-account>=0.9.0
+
+# Data formats
+pyyaml>=6.0
+pydantic>=2.0.0
+
+# HTTP
+requests>=2.31.0
+
+# CLI
+click>=8.1.0
+rich>=13.0.0
+
+# Configuration
+python-dotenv>=1.0.0

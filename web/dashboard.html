@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart402 Dashboard - Real-time Analytics</title>
+    <link rel="stylesheet" href="static/css/main.css">
+    <link rel="stylesheet" href="static/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-cube"></i>
+                <span>Smart<strong>402</strong></span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#overview" class="nav-item active">
+                <i class="fas fa-chart-line"></i>
+                <span>Overview</span>
+            </a>
+            <a href="#contracts" class="nav-item">
+                <i class="fas fa-file-contract"></i>
+                <span>Contracts</span>
+            </a>
+            <a href="#aeo" class="nav-item">
+                <i class="fas fa-search-plus"></i>
+                <span>AEO</span>
+            </a>
+            <a href="#llmo" class="nav-item">
+                <i class="fas fa-brain"></i>
+                <span>LLMO</span>
+            </a>
+            <a href="#scc" class="nav-item">
+                <i class="fas fa-code"></i>
+                <span>SCC</span>
+            </a>
+            <a href="#x402" class="nav-item">
+                <i class="fas fa-exchange-alt"></i>
+                <span>X402</span>
+            </a>
+            <a href="#analytics" class="nav-item">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Back to Home</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <h1>Dashboard</h1>
+            <div class="header-actions">
+                <button class="btn btn-icon" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button class="btn btn-primary" id="processContractBtn">
+                    <i class="fas fa-plus"></i> Process Contract
+                </button>
+            </div>
+        </header>
+
+        <!-- Overview Section -->
+        <section id="overview">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-label">Total Contracts</div>
+                        <div class="metric-value" id="totalContracts">0</div>
+                        <div class="metric-change positive">
+                            <i class="fas fa-arrow-up"></i> 12% from last week
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value" id="successRate">0%</div>
+                        <div class="metric-change positive">
+                            <i class="fas fa-arrow-up"></i> 3.2% from last week
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-label">Avg Processing Time</div>
+                        <div class="metric-value" id="avgTime">0s</div>
+                        <div class="metric-change negative">
+                            <i class="fas fa-arrow-down"></i> 8% faster
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-label">Best Fitness</div>
+                        <div class="metric-value" id="bestFitness">0.000</div>
+                        <div class="metric-change positive">
+                            <i class="fas fa-arrow-up"></i> Improving
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Contract Processing Pipeline</h3>
+                    <canvas id="pipelineChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Performance Metrics Over Time</h3>
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Component Efficiency</h3>
+                    <canvas id="efficiencyChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>State Transitions</h3>
+                    <canvas id="stateChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contracts Section -->
+        <section id="contracts" class="hidden">
+            <h2>Recent Contracts</h2>
+            <div class="table-container">
+                <table class="data-table" id="contractsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>AEO Score</th>
+                            <th>Understanding</th>
+                            <th>Gas Estimate</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contractsTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics" class="hidden">
+            <h2>Advanced Analytics</h2>
+
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>Network Effect Visualization</h3>
+                    <canvas id="networkChart"></canvas>
+                    <div class="formula">
+                        <code>V = k₁n² + k₂m^α + k₃t^β + k₄s^γ</code>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3>Optimization Landscape</h3>
+                    <canvas id="optimizationChart"></canvas>
+                    <div class="formula">
+                        <code>F(C) = Σ(αᵢ·Componentᵢ) - γ·Risk</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <h3>System Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <label>Discovery Rate:</label>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="discoveryRate" style="width: 0%"></div>
+                            <span class="stat-text" id="discoveryRateText">0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <label>Understanding Rate:</label>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="understandingRate" style="width: 0%"></div>
+                            <span class="stat-text" id="understandingRateText">0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <label>Compilation Rate:</label>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="compilationRate" style="width: 0%"></div>
+                            <span class="stat-text" id="compilationRateText">0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <label>Execution Rate:</label>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="executionRate" style="width: 0%"></div>
+                            <span class="stat-text" id="executionRateText">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="static/js/dashboard.js"></script>
+</body>
+</html>

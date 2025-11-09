@@ -1,0 +1,61 @@
+[package]
+name = "smart402"
+version = "1.0.0"
+edition = "2021"
+authors = ["Mardochée JOSEPH <developers@smart402.io>"]
+description = "Rust SDK for Smart402 - Universal Protocol for AI-Native Smart Contracts"
+license = "MIT"
+repository = "https://github.com/smart402/framework"
+homepage = "https://smart402.io"
+documentation = "https://docs.rs/smart402"
+keywords = ["smart402", "blockchain", "smart-contracts", "ai", "web3"]
+categories = ["cryptography::cryptocurrencies", "web-programming", "api-bindings"]
+readme = "README.md"
+
+[lib]
+name = "smart402"
+path = "src/lib.rs"
+
+[[bin]]
+name = "smart402"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+# Blockchain
+ethers = "2.0"
+alloy-primitives = "0.6"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json"] }
+
+# CLI
+clap = { version = "4.4", features = ["derive", "env"] }
+colored = "2.1"
+indicatif = "0.17"
+dialoguer = "0.11"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Utilities
+chrono = { version = "0.4", features = ["serde"] }
+hex = "0.4"
+sha2 = "0.10"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
