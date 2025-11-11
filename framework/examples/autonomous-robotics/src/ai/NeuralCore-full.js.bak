@@ -1,8 +1,12 @@
 /**
- * Smart402 Autonomous Robotics - Neural Core (Simplified)
+ * Smart402 Autonomous Robotics - Neural Core
  * AI-powered decision engine with self-evolution capabilities
- * Simplified version without heavy ML dependencies for easy testing
+ * Integrates with Smart402 framework for optimized contract generation
  */
+
+import * as tf from '@tensorflow/tfjs-node';
+import brain from 'brain.js';
+import { SimpleLinearRegression, PolynomialRegression } from 'ml-regression';
 
 export class NeuralCore {
   constructor(config = {}) {
@@ -15,17 +19,44 @@ export class NeuralCore {
     };
 
     this.currentGeneration = 0;
+    this.model = null;
+    this.decisionNetwork = null;
     this.performanceHistory = [];
     this.evolutionHistory = [];
     this.isTraining = false;
-    this.weights = this.initializeWeights();
   }
 
   /**
-   * Initialize Neural Core with decision weights
+   * Initialize Neural Core with TensorFlow.js model
    */
   async initialize() {
     console.log('\n🧠 Initializing Neural Core...');
+
+    // Create deep learning model for robot task assignment
+    this.model = tf.sequential({
+      layers: [
+        tf.layers.dense({ inputShape: [15], units: 64, activation: 'relu' }),
+        tf.layers.dropout({ rate: 0.2 }),
+        tf.layers.dense({ units: 32, activation: 'relu' }),
+        tf.layers.dropout({ rate: 0.2 }),
+        tf.layers.dense({ units: 16, activation: 'relu' }),
+        tf.layers.dense({ units: 8, activation: 'softmax' }) // 8 possible decisions
+      ]
+    });
+
+    this.model.compile({
+      optimizer: tf.train.adam(this.config.learningRate),
+      loss: 'categoricalCrossentropy',
+      metrics: ['accuracy']
+    });
+
+    // Initialize Brain.js neural network for real-time decisions
+    this.decisionNetwork = new brain.NeuralNetwork({
+      hiddenLayers: [10, 8, 6],
+      activation: 'sigmoid',
+      learningRate: this.config.learningRate
+    });
+
     console.log('✓ Neural Core initialized');
     console.log(`  Learning Rate: ${this.config.learningRate}`);
     console.log(`  Evolution: ${this.config.evolutionEnabled ? 'Enabled' : 'Disabled'}`);
@@ -35,26 +66,19 @@ export class NeuralCore {
   }
 
   /**
-   * Initialize decision weights
-   */
-  initializeWeights() {
-    return {
-      uptime: 0.25,
-      successRate: 0.30,
-      recentPerformance: 0.20,
-      battery: 0.15,
-      load: 0.10
-    };
-  }
-
-  /**
    * Make intelligent decision about robot task assignment
+   * Uses AI to optimize which robot should handle which task
    */
   async makeTaskAssignmentDecision(task, availableRobots) {
     const features = this.extractTaskFeatures(task, availableRobots);
 
-    // Use weighted scoring to make decision
-    const probabilities = this.calculateDecisionProbabilities(features, availableRobots);
+    // Use TensorFlow model for complex decisions
+    const inputTensor = tf.tensor2d([features], [1, 15]);
+    const prediction = this.model.predict(inputTensor);
+    const probabilities = await prediction.data();
+
+    inputTensor.dispose();
+    prediction.dispose();
 
     // Interpret probabilities to select best robot
     const decision = this.interpretDecisionProbabilities(
@@ -70,45 +94,35 @@ export class NeuralCore {
   }
 
   /**
-   * Calculate decision probabilities based on features
-   */
-  calculateDecisionProbabilities(features, robots) {
-    // Simulate neural network output with weighted heuristics
-    const scores = {
-      assign_highest_performance: 0.3 + features.historicalSuccessRate * 0.3,
-      assign_nearest: features.avgFleetUptime * 0.25,
-      assign_lowest_load: (1 - features.loadFactor) * 0.25,
-      assign_best_battery: features.avgFleetBattery * 0.2,
-      assign_specialist: 0.15,
-      defer_task: features.loadFactor > 0.8 ? 0.3 : 0.05,
-      split_task: robots.length > 3 ? 0.2 : 0.05,
-      escalate_task: features.errorRate > 0.5 ? 0.4 : 0.05
-    };
-
-    return Object.values(scores);
-  }
-
-  /**
    * Extract features from task and robots for AI decision making
    */
   extractTaskFeatures(task, robots) {
-    const features = {
-      taskType: this.normalizeTaskType(task.type),
-      taskPriority: this.normalizeTaskPriority(task.priority),
-      weight: task.payload?.weight ? task.payload.weight / 1000 : 0,
-      distance: task.payload?.distance ? task.payload.distance / 10000 : 0,
-      complexity: task.payload?.complexity ? task.payload.complexity / 100 : 0,
-      robotCount: robots.length / 100,
-      avgFleetUptime: this.calculateAverageFleetUptime(robots),
-      avgFleetBattery: this.calculateAverageFleetBatteryLevel(robots),
-      timeOfDay: this.getTimeOfDayFactor(),
-      weekday: this.getWeekdayFactor(),
-      loadFactor: this.getLoadFactor(robots),
-      historicalSuccessRate: this.getHistoricalSuccessRate(),
-      avgTaskDuration: this.getAverageTaskDuration(),
-      errorRate: this.getRecentErrorRate(),
-      random: Math.random() * 0.1
-    };
+    const features = [
+      // Task features (normalized 0-1)
+      this.normalizeTaskType(task.type),
+      this.normalizeTaskPriority(task.priority),
+      task.payload?.weight ? task.payload.weight / 1000 : 0,
+      task.payload?.distance ? task.payload.distance / 10000 : 0,
+      task.payload?.complexity ? task.payload.complexity / 100 : 0,
+
+      // Fleet features
+      robots.length / 100, // Normalized robot count
+      this.calculateAverageFleetUptime(robots),
+      this.calculateAverageFleetBatteryLevel(robots),
+
+      // Environmental features
+      this.getTimeOfDayFactor(),
+      this.getWeekdayFactor(),
+      this.getLoadFactor(robots),
+
+      // Historical performance
+      this.getHistoricalSuccessRate(),
+      this.getAverageTaskDuration(),
+      this.getRecentErrorRate(),
+
+      // Random factors for exploration
+      Math.random() * 0.1
+    ];
 
     return features;
   }
@@ -117,6 +131,7 @@ export class NeuralCore {
    * Interpret AI prediction probabilities into actionable decisions
    */
   interpretDecisionProbabilities(probabilities, robots, task) {
+    // Decision types based on probability output
     const decisionTypes = [
       'assign_highest_performance',
       'assign_nearest',
@@ -128,6 +143,7 @@ export class NeuralCore {
       'escalate_task'
     ];
 
+    // Get highest probability decision type
     let maxProb = 0;
     let selectedType = decisionTypes[0];
 
@@ -138,6 +154,7 @@ export class NeuralCore {
       }
     }
 
+    // Execute the decision strategy
     const decision = this.executeDecisionStrategy(selectedType, robots, task);
 
     return {
@@ -170,14 +187,19 @@ export class NeuralCore {
     switch (strategyType) {
       case 'assign_highest_performance':
         return this.assignToHighestPerformance(validRobots, task);
+
       case 'assign_nearest':
         return this.assignToNearest(validRobots, task);
+
       case 'assign_lowest_load':
         return this.assignToLowestLoad(validRobots, task);
+
       case 'assign_best_battery':
         return this.assignToBestBattery(validRobots, task);
+
       case 'assign_specialist':
         return this.assignToSpecialist(validRobots, task);
+
       case 'defer_task':
         return {
           robotId: null,
@@ -186,8 +208,10 @@ export class NeuralCore {
           estimatedDuration: null,
           successProbability: 0.5
         };
+
       case 'split_task':
         return this.splitTaskAcrossRobots(validRobots, task);
+
       case 'escalate_task':
         return {
           robotId: null,
@@ -196,6 +220,7 @@ export class NeuralCore {
           estimatedDuration: null,
           successProbability: 0
         };
+
       default:
         return this.assignToHighestPerformance(validRobots, task);
     }
@@ -357,8 +382,16 @@ export class NeuralCore {
    * Calculate robot performance score for specific task
    */
   calculateRobotPerformanceScore(robot, task) {
-    const uptime = (robot.telemetry?.uptime || 0) / 86400;
-    const uptimeScore = Math.min(uptime / 30, 1);
+    const weights = {
+      uptime: 0.25,
+      successRate: 0.30,
+      recentPerformance: 0.20,
+      battery: 0.15,
+      load: 0.10
+    };
+
+    const uptime = (robot.telemetry?.uptime || 0) / 86400; // Normalize to days
+    const uptimeScore = Math.min(uptime / 30, 1); // Max 30 days
 
     const tasksCompleted = robot.telemetry?.tasks_completed || 0;
     const tasksFailed = robot.telemetry?.tasks_failed || 0;
@@ -367,15 +400,17 @@ export class NeuralCore {
       : 0.5;
 
     const recentScore = (robot.telemetry?.reputation_score || 5000) / 10000;
+
     const batteryScore = (robot.telemetry?.battery_level || 50) / 100;
+
     const loadScore = 1 - this.calculateRobotLoad(robot);
 
     const totalScore =
-      uptimeScore * this.weights.uptime +
-      successRate * this.weights.successRate +
-      recentScore * this.weights.recentPerformance +
-      batteryScore * this.weights.battery +
-      loadScore * this.weights.load;
+      uptimeScore * weights.uptime +
+      successRate * weights.successRate +
+      recentScore * weights.recentPerformance +
+      batteryScore * weights.battery +
+      loadScore * weights.load;
 
     return Math.max(0, Math.min(1, totalScore));
   }
@@ -399,8 +434,11 @@ export class NeuralCore {
       return;
     }
 
-    // Adjust weights based on recent performance
-    this.optimizeWeights();
+    // Train model with recent decision history
+    await this.retrainModel();
+
+    // Adjust hyperparameters
+    await this.optimizeHyperparameters();
 
     // Create new generation
     this.currentGeneration++;
@@ -412,6 +450,7 @@ export class NeuralCore {
     console.log(`  Improvement: ${improvement >= 0 ? '+' : ''}${(improvement * 100).toFixed(2)}%`);
     console.log(`  ✓ Evolution complete - Generation ${this.currentGeneration}`);
 
+    // Store evolution history
     this.evolutionHistory.push({
       generation: this.currentGeneration,
       timestamp: new Date(),
@@ -427,33 +466,68 @@ export class NeuralCore {
   }
 
   /**
-   * Optimize weights based on performance
+   * Retrain model with recent performance data
    */
-  optimizeWeights() {
+  async retrainModel() {
+    if (this.performanceHistory.length < 10) {
+      return; // Not enough data
+    }
+
+    this.isTraining = true;
+
+    // Prepare training data from performance history
+    const recentHistory = this.performanceHistory.slice(-1000); // Last 1000 decisions
+
+    const xs = recentHistory.map(h => h.features);
+    const ys = recentHistory.map(h => h.outcome);
+
+    // Convert to tensors
+    const xTrain = tf.tensor2d(xs);
+    const yTrain = tf.tensor2d(ys);
+
+    // Train model
+    await this.model.fit(xTrain, yTrain, {
+      epochs: 50,
+      batchSize: 32,
+      validationSplit: 0.2,
+      callbacks: {
+        onEpochEnd: (epoch, logs) => {
+          if (epoch % 10 === 0) {
+            console.log(`    Epoch ${epoch}: loss = ${logs.loss.toFixed(4)}, acc = ${logs.acc.toFixed(4)}`);
+          }
+        }
+      }
+    });
+
+    // Cleanup tensors
+    xTrain.dispose();
+    yTrain.dispose();
+
+    this.isTraining = false;
+  }
+
+  /**
+   * Optimize hyperparameters based on performance
+   */
+  async optimizeHyperparameters() {
     const performance = this.evaluateCurrentPerformance();
 
     if (performance.accuracy < 0.7) {
-      // Increase learning rate
+      // Performance is poor - increase learning rate
       this.config.learningRate = Math.min(this.config.learningRate * 1.2, 0.1);
-
-      // Adjust weights randomly for exploration
-      Object.keys(this.weights).forEach(key => {
-        this.weights[key] += (Math.random() - 0.5) * this.config.learningRate;
-        this.weights[key] = Math.max(0, Math.min(1, this.weights[key]));
-      });
-
-      // Normalize weights
-      const sum = Object.values(this.weights).reduce((a, b) => a + b, 0);
-      Object.keys(this.weights).forEach(key => {
-        this.weights[key] /= sum;
-      });
-
       console.log(`    Increased learning rate to ${this.config.learningRate.toFixed(4)}`);
     } else if (performance.accuracy > 0.95) {
-      // Decrease learning rate for fine-tuning
+      // Performance is excellent - decrease learning rate for fine-tuning
       this.config.learningRate = Math.max(this.config.learningRate * 0.8, 0.001);
       console.log(`    Decreased learning rate to ${this.config.learningRate.toFixed(4)}`);
     }
+
+    // Re-compile model with new learning rate
+    this.model.compile({
+      optimizer: tf.train.adam(this.config.learningRate),
+      loss: 'categoricalCrossentropy',
+      metrics: ['accuracy']
+    });
   }
 
   /**
@@ -465,9 +539,12 @@ export class NeuralCore {
     }
 
     const recent = this.performanceHistory.slice(-100);
+
     const successfulDecisions = recent.filter(h => h.successful).length;
     const accuracy = successfulDecisions / recent.length;
+
     const avgDuration = recent.reduce((sum, h) => sum + (h.duration || 0), 0) / recent.length;
+
     const successRate = recent.reduce((sum, h) => sum + (h.successProbability || 0.5), 0) / recent.length;
 
     return { accuracy, avgDuration, successRate };
@@ -484,10 +561,11 @@ export class NeuralCore {
       confidence: decision.confidence,
       successProbability: decision.successProbability,
       features: features,
-      successful: null,
+      successful: null, // Will be updated when task completes
       duration: null
     });
 
+    // Keep only recent history (last 10,000 decisions)
     if (this.performanceHistory.length > 10000) {
       this.performanceHistory = this.performanceHistory.slice(-10000);
     }
@@ -518,7 +596,7 @@ export class NeuralCore {
   calculateAverageFleetUptime(robots) {
     if (robots.length === 0) return 0;
     const totalUptime = robots.reduce((sum, r) => sum + (r.telemetry?.uptime || 0), 0);
-    return Math.min(totalUptime / robots.length / 86400 / 30, 1);
+    return Math.min(totalUptime / robots.length / 86400 / 30, 1); // Normalize to 30 days
   }
 
   calculateAverageFleetBatteryLevel(robots) {
@@ -555,7 +633,7 @@ export class NeuralCore {
     const recent = this.performanceHistory.slice(-50).filter(h => h.duration);
     if (recent.length === 0) return 0.5;
     const avgDuration = recent.reduce((sum, h) => sum + h.duration, 0) / recent.length;
-    return Math.min(avgDuration / 3600, 1);
+    return Math.min(avgDuration / 3600, 1); // Normalize to 1 hour
   }
 
   getRecentErrorRate() {
@@ -566,6 +644,7 @@ export class NeuralCore {
   }
 
   calculateRobotLoad(robot) {
+    // Simple load calculation based on status
     switch (robot.status) {
       case 'busy': return 1.0;
       case 'active': return 0.3;
@@ -581,7 +660,8 @@ export class NeuralCore {
     const [lon1, lat1] = coord1;
     const [lon2, lat2] = coord2;
 
-    const R = 6371e3;
+    // Haversine formula
+    const R = 6371e3; // Earth radius in meters
     const φ1 = lat1 * Math.PI / 180;
     const φ2 = lat2 * Math.PI / 180;
     const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -596,11 +676,15 @@ export class NeuralCore {
   }
 
   estimateTaskDuration(robot, task) {
-    const baseTime = 1800;
+    // Simple estimation based on robot performance and task complexity
+    const baseTime = 1800; // 30 minutes base
     const performanceScore = this.calculateRobotPerformanceScore(robot, task);
     return baseTime / performanceScore;
   }
 
+  /**
+   * Get Neural Core status and statistics
+   */
   getStatus() {
     return {
       generation: this.currentGeneration,
@@ -611,8 +695,7 @@ export class NeuralCore {
       currentPerformance: this.evaluateCurrentPerformance(),
       lastEvolution: this.evolutionHistory.length > 0
         ? this.evolutionHistory[this.evolutionHistory.length - 1]
-        : null,
-      weights: this.weights
+        : null
     };
   }
 }

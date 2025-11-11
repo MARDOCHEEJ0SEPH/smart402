@@ -6,7 +6,7 @@
  * - X402 Protocol for automatic machine-to-machine payments
  */
 
-import { Smart402 } from '@smart402/sdk';
+import { Smart402 } from '../lib/smart402-sdk.js';
 import { ethers } from 'ethers';
 import dotenv from 'dotenv';
 
@@ -32,13 +32,19 @@ export class Smart402RoboticsIntegration {
    * Initialize Smart402 SDK and blockchain connection
    */
   async initialize() {
-    // Setup blockchain provider
-    this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
-    this.signer = new ethers.Wallet(this.config.privateKey, this.provider);
+    // Setup blockchain provider (demo mode if no credentials)
+    if (this.config.privateKey && this.config.rpcUrl) {
+      this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
+      this.signer = new ethers.Wallet(this.config.privateKey, this.provider);
 
-    console.log('✓ Smart402 Robotics Integration initialized');
-    console.log(`  Network: ${this.config.blockchainNetwork}`);
-    console.log(`  Wallet: ${this.signer.address}`);
+      console.log('✓ Smart402 Robotics Integration initialized');
+      console.log(`  Network: ${this.config.blockchainNetwork}`);
+      console.log(`  Wallet: ${this.signer.address}`);
+    } else {
+      console.log('✓ Smart402 Robotics Integration initialized (Demo Mode)');
+      console.log(`  Network: ${this.config.blockchainNetwork} (simulated)`);
+      console.log(`  Note: Configure PRIVATE_KEY and BLOCKCHAIN_RPC_URL in .env for real blockchain`);
+    }
   }
 
   /**
@@ -71,12 +77,12 @@ export class Smart402RoboticsIntegration {
         {
           role: 'provider',
           email: 'robotics-platform@smart402.io',
-          walletAddress: this.signer.address
+          walletAddress: this.signer?.address || '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
         },
         {
           role: 'client',
           email: clientEmail,
-          walletAddress: rentalConfig.clientWallet
+          walletAddress: rentalConfig.clientWallet || '0x1234567890123456789012345678901234567890'
         }
       ],
 
@@ -351,7 +357,7 @@ export class Smart402RoboticsIntegration {
    * Calculate AEO score for AI discoverability
    */
   async calculateAEOScore(contract) {
-    const { AEOEngine } = await import('@smart402/sdk');
+    const { AEOEngine } = await import('../lib/smart402-sdk.js');
     const aeo = new AEOEngine();
 
     const score = await aeo.calculateScore(contract.ucl);
@@ -370,7 +376,7 @@ export class Smart402RoboticsIntegration {
    * Optimize contract for AEO (Answer Engine Optimization)
    */
   async optimizeAEO(contract) {
-    const { AEOEngine } = await import('@smart402/sdk');
+    const { AEOEngine } = await import('../lib/smart402-sdk.js');
     const aeo = new AEOEngine();
 
     const optimized = await aeo.optimize(contract.ucl, {
@@ -390,7 +396,7 @@ export class Smart402RoboticsIntegration {
    * Validate contract with LLMO (Large Language Model Optimization)
    */
   async validateWithLLMO(contract) {
-    const { LLMOEngine } = await import('@smart402/sdk');
+    const { LLMOEngine } = await import('../lib/smart402-sdk.js');
     const llmo = new LLMOEngine();
 
     const validation = await llmo.validate(contract.ucl);
