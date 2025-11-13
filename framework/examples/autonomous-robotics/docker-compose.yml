@@ -1,0 +1,216 @@
+# Smart402 Autonomous Robotics Platform - Docker Compose
+# Complete development and production environment
+
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: smart402-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-smart402_dev_password}
+      MONGO_INITDB_DATABASE: smart402-robotics
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - smart402-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: smart402-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - smart402-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Smart402 Robotics API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart402-api
+    restart: always
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      # Server
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      WS_PORT: 3001
+
+      # MongoDB
+      MONGODB_URI: mongodb://admin:${MONGODB_PASSWORD:-smart402_dev_password}@mongodb:27017
+      MONGODB_DATABASE: smart402-robotics
+
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Blockchain (Polygon)
+      BLOCKCHAIN_NETWORK: ${BLOCKCHAIN_NETWORK:-polygon-mumbai}
+      BLOCKCHAIN_RPC_URL: ${BLOCKCHAIN_RPC_URL}
+      PRIVATE_KEY: ${PRIVATE_KEY}
+
+      # Chainlink
+      CHAINLINK_NODE_URL: ${CHAINLINK_NODE_URL}
+      CHAINLINK_API_KEY: ${CHAINLINK_API_KEY}
+      CHAINLINK_JOB_ID: ${CHAINLINK_JOB_ID}
+
+      # Smart402
+      SMART402_API_KEY: ${SMART402_API_KEY}
+      SMART402_X402_ENDPOINT: https://x402.smart402.io
+      AEO_TARGET_SCORE: 0.85
+
+      # Neural Core
+      NEURAL_CORE_ENABLED: true
+      EVOLUTION_ENGINE_ENABLED: true
+      LEARNING_RATE: 0.01
+
+      # Payment
+      PAYMENT_TOKEN: USDC
+      USDC_CONTRACT_ADDRESS: ${USDC_CONTRACT_ADDRESS}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+      - node_modules:/app/node_modules
+    networks:
+      - smart402-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy (Production)
+  nginx:
+    image: nginx:alpine
+    container_name: smart402-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./public:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+    networks:
+      - smart402-network
+    profiles:
+      - production
+
+  # Elasticsearch (Optional - for advanced analytics)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: smart402-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - smart402-network
+    profiles:
+      - advanced
+
+  # Kibana (Optional - for visualization)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: smart402-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - smart402-network
+    profiles:
+      - advanced
+
+  # Prometheus (Optional - for monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smart402-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - smart402-network
+    profiles:
+      - monitoring
+
+  # Grafana (Optional - for dashboards)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: smart402-grafana
+    ports:
+      - "3100:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - smart402-network
+    profiles:
+      - monitoring
+
+networks:
+  smart402-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  redis_data:
+    driver: local
+  node_modules:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

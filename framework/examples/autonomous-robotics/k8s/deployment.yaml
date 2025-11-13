@@ -1,0 +1,511 @@
+# Smart402 Autonomous Robotics Platform - Kubernetes Deployment
+# Production-ready deployment with auto-scaling and high availability
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smart402-robotics
+  labels:
+    name: smart402-robotics
+    environment: production
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smart402-config
+  namespace: smart402-robotics
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  WS_PORT: "3001"
+  MONGODB_DATABASE: "smart402-robotics"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  BLOCKCHAIN_NETWORK: "polygon"
+  SMART402_X402_ENDPOINT: "https://x402.smart402.io"
+  AEO_TARGET_SCORE: "0.85"
+  NEURAL_CORE_ENABLED: "true"
+  EVOLUTION_ENGINE_ENABLED: "true"
+  SELF_HEALING_ENABLED: "true"
+  AUTO_SCALE_ENABLED: "true"
+
+---
+# Secret for sensitive data
+apiVersion: v1
+kind: Secret
+metadata:
+  name: smart402-secrets
+  namespace: smart402-robotics
+type: Opaque
+stringData:
+  MONGODB_URI: "mongodb://admin:password@mongodb-service:27017"
+  PRIVATE_KEY: "your-private-key-here"
+  CHAINLINK_API_KEY: "your-chainlink-api-key"
+  SMART402_API_KEY: "your-smart402-api-key"
+  JWT_SECRET: "your-jwt-secret"
+
+---
+# MongoDB StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: smart402-robotics
+spec:
+  serviceName: mongodb-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+          name: mongodb
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "admin"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: smart402-secrets
+              key: MONGODB_PASSWORD
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "fast-ssd"
+      resources:
+        requests:
+          storage: 100Gi
+
+---
+# MongoDB Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  namespace: smart402-robotics
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb
+  ports:
+  - port: 27017
+    targetPort: 27017
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: smart402-robotics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: smart402-robotics
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+
+---
+# Redis PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: smart402-robotics
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: "fast-ssd"
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# Smart402 API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart402-api
+  namespace: smart402-robotics
+  labels:
+    app: smart402-api
+    version: v1.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: smart402-api
+  template:
+    metadata:
+      labels:
+        app: smart402-api
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: smart402-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: api
+        image: smart402/robotics-platform:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        - containerPort: 3001
+          name: websocket
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: smart402-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smart402-config
+              key: PORT
+        - name: WS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smart402-config
+              key: WS_PORT
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: smart402-secrets
+              key: MONGODB_URI
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: smart402-config
+              key: MONGODB_DATABASE
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smart402-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smart402-config
+              key: REDIS_PORT
+        - name: PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smart402-secrets
+              key: PRIVATE_KEY
+        - name: CHAINLINK_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smart402-secrets
+              key: CHAINLINK_API_KEY
+        - name: SMART402_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smart402-secrets
+              key: SMART402_API_KEY
+        envFrom:
+        - configMapRef:
+            name: smart402-config
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+
+---
+# Smart402 API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: smart402-api-service
+  namespace: smart402-robotics
+  labels:
+    app: smart402-api
+spec:
+  type: LoadBalancer
+  selector:
+    app: smart402-api
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+  - name: websocket
+    port: 3001
+    targetPort: 3001
+    protocol: TCP
+  sessionAffinity: ClientIP
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: smart402-api-hpa
+  namespace: smart402-robotics
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: smart402-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+      - type: Pods
+        value: 2
+        periodSeconds: 30
+      selectPolicy: Max
+
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: smart402-service-account
+  namespace: smart402-robotics
+
+---
+# Ingress (HTTPS with TLS)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smart402-ingress
+  namespace: smart402-robotics
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/websocket-services: "smart402-api-service"
+spec:
+  tls:
+  - hosts:
+    - robotics.smart402.io
+    - api.robotics.smart402.io
+    secretName: smart402-tls-cert
+  rules:
+  - host: robotics.smart402.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: smart402-api-service
+            port:
+              number: 80
+  - host: api.robotics.smart402.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: smart402-api-service
+            port:
+              number: 80
+
+---
+# Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: smart402-network-policy
+  namespace: smart402-robotics
+spec:
+  podSelector:
+    matchLabels:
+      app: smart402-api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: smart402-robotics
+    ports:
+    - protocol: TCP
+      port: 3000
+    - protocol: TCP
+      port: 3001
+  egress:
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 27017  # MongoDB
+    - protocol: TCP
+      port: 6379   # Redis
+    - protocol: TCP
+      port: 443    # HTTPS (for blockchain & Chainlink)
+
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: smart402-api-pdb
+  namespace: smart402-robotics
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: smart402-api
+
+---
+# Resource Quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: smart402-quota
+  namespace: smart402-robotics
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    limits.cpu: "40"
+    limits.memory: "80Gi"
+    persistentvolumeclaims: "10"
+    services.loadbalancers: "2"
