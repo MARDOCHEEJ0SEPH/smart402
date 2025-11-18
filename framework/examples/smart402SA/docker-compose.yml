@@ -1,0 +1,350 @@
+# Smart402 Scalable Architecture - Development Environment
+# Complete infrastructure stack for local development
+
+version: '3.8'
+
+services:
+  # PostgreSQL - Primary database for contracts and transactions
+  postgres:
+    image: postgres:15-alpine
+    container_name: smart402sa-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: smart402sa
+      POSTGRES_USER: smart402
+      POSTGRES_PASSWORD: smart402_dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/database/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smart402"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smart402sa-network
+
+  # MongoDB - Metadata, telemetry, and flexible schemas
+  mongodb:
+    image: mongo:7.0
+    container_name: smart402sa-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: smart402
+      MONGO_INITDB_ROOT_PASSWORD: smart402_dev_password
+      MONGO_INITDB_DATABASE: smart402sa
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/smart402sa --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smart402sa-network
+
+  # Redis - Caching, sessions, and message queue
+  redis:
+    image: redis:7-alpine
+    container_name: smart402sa-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - smart402sa-network
+
+  # Elasticsearch - AEO search and log aggregation
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: smart402sa-elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - smart402sa-network
+
+  # Kibana - Elasticsearch UI and log visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: smart402sa-kibana
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - smart402sa-network
+
+  # RabbitMQ - Message queue for async processing
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: smart402sa-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: smart402
+      RABBITMQ_DEFAULT_PASS: smart402_dev_password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - smart402sa-network
+
+  # Prometheus - Metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smart402sa-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - smart402sa-network
+
+  # Grafana - Metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: smart402sa-grafana
+    restart: unless-stopped
+    ports:
+      - "3100:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=smart402_dev_password
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - smart402sa-network
+
+  # Jaeger - Distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: smart402sa-jaeger
+    restart: unless-stopped
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"  # UI
+      - "14268:14268"  # Collector
+      - "14250:14250"
+      - "9411:9411"
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: ":9411"
+    networks:
+      - smart402sa-network
+
+  # nginx - Reverse proxy and load balancer
+  nginx:
+    image: nginx:alpine
+    container_name: smart402sa-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - gateway
+    networks:
+      - smart402sa-network
+
+  # Frontend - React application
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: smart402sa-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:4000
+      - VITE_GRAPHQL_URL=http://localhost:4002/graphql
+      - VITE_WS_URL=ws://localhost:4003
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+    networks:
+      - smart402sa-network
+
+  # Gateway - API Gateway (Fastify)
+  gateway:
+    build:
+      context: ./backend/gateway
+      target: development
+    container_name: smart402sa-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - POSTGRES_URL=postgresql://smart402:smart402_dev_password@postgres:5432/smart402sa
+      - MONGODB_URL=mongodb://smart402:smart402_dev_password@mongodb:27017/smart402sa
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    volumes:
+      - ./backend/gateway:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: npm run dev
+    networks:
+      - smart402sa-network
+
+  # Smart402 Core Service
+  smart402-core:
+    build:
+      context: ./backend/services/smart402-core
+      target: development
+    container_name: smart402sa-core
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=development
+      - PORT=4001
+      - POSTGRES_URL=postgresql://smart402:smart402_dev_password@postgres:5432/smart402sa
+      - MONGODB_URL=mongodb://smart402:smart402_dev_password@mongodb:27017/smart402sa
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - BLOCKCHAIN_RPC_URL=${BLOCKCHAIN_RPC_URL}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+    volumes:
+      - ./backend/services/smart402-core:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+      - elasticsearch
+    command: npm run dev
+    networks:
+      - smart402sa-network
+
+  # GraphQL API
+  graphql:
+    build:
+      context: ./backend/graphql
+      target: development
+    container_name: smart402sa-graphql
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    environment:
+      - NODE_ENV=development
+      - PORT=4002
+      - POSTGRES_URL=postgresql://smart402:smart402_dev_password@postgres:5432/smart402sa
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./backend/graphql:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    command: npm run dev
+    networks:
+      - smart402sa-network
+
+  # WebSocket Server
+  websocket:
+    build:
+      context: ./backend/websocket
+      target: development
+    container_name: smart402sa-websocket
+    restart: unless-stopped
+    ports:
+      - "4003:4003"
+    environment:
+      - NODE_ENV=development
+      - PORT=4003
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./backend/websocket:/app
+      - /app/node_modules
+    depends_on:
+      - redis
+    command: npm run dev
+    networks:
+      - smart402sa-network
+
+networks:
+  smart402sa-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

@@ -1,0 +1,80 @@
+{
+  "name": "@smart402/scalable-architecture",
+  "version": "1.0.0",
+  "description": "Production-ready fullstack JavaScript with Smart402 framework integration",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend/gateway",
+    "backend/services/*",
+    "backend/graphql",
+    "shared/*",
+    "edge/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:e2e": "playwright test",
+    "test:load": "k6 run tests/load/script.js",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "dev:gateway": "npm run dev --workspace backend/gateway",
+    "dev:smart402": "npm run dev --workspace backend/services/smart402-core",
+    "dev:graphql": "npm run dev --workspace backend/graphql",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "k8s:deploy": "kubectl apply -f infrastructure/kubernetes/",
+    "k8s:delete": "kubectl delete -f infrastructure/kubernetes/",
+    "edge:deploy": "npm run deploy --workspace edge/vercel && npm run deploy --workspace edge/cloudflare"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "turbo": "^1.11.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "keywords": [
+    "smart402",
+    "fullstack",
+    "scalable",
+    "microservices",
+    "kubernetes",
+    "blockchain",
+    "aeo",
+    "llmo",
+    "x402",
+    "fastify",
+    "react",
+    "typescript",
+    "graphql",
+    "websocket"
+  ],
+  "author": "Smart402 Team",
+  "license": "MIT"
+}

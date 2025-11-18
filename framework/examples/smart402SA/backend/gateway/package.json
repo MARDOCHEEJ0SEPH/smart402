@@ -1,0 +1,44 @@
+{
+  "name": "@smart402sa/gateway",
+  "version": "1.0.0",
+  "description": "Smart402 API Gateway - Fastify-based microservices gateway",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@smart402sa/sdk": "workspace:*",
+    "fastify": "^4.25.2",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/swagger": "^8.13.0",
+    "@fastify/swagger-ui": "^2.1.0",
+    "@fastify/jwt": "^7.2.4",
+    "@fastify/postgres": "^5.2.2",
+    "@fastify/mongodb": "^8.0.0",
+    "@fastify/redis": "^6.1.1",
+    "@fastify/compress": "^6.5.0",
+    "@fastify/auth": "^4.4.0",
+    "@fastify/env": "^4.3.0",
+    "pg": "^8.11.3",
+    "mongodb": "^6.3.0",
+    "redis": "^4.6.11",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1",
+    "dotenv": "^16.3.1",
+    "zod": "^3.22.4",
+    "ethers": "^6.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "eslint": "^8.55.0"
+  }
+}

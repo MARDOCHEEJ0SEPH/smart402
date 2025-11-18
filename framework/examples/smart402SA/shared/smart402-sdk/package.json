@@ -1,0 +1,25 @@
+{
+  "name": "@smart402sa/sdk",
+  "version": "1.0.0",
+  "description": "Smart402 SDK for Scalable Architecture",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "keywords": ["smart402", "aeo", "llmo", "x402", "blockchain"],
+  "author": "Smart402 Team",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "jest": "^29.7.0",
+    "typescript": "^5.3.3"
+  }
+}
